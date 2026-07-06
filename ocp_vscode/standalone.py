@@ -224,6 +224,7 @@ class Viewer:
 
         self.python_client = None
         self.javascript_client = None
+        self.pending_model = None
         self.splash = True
 
         self.sock.route("/")(self.handle_message)
@@ -397,6 +398,7 @@ class Viewer:
                 self.python_client = ws
                 self.debug_print(f"[{message_type}] Received a new model")
                 if self.javascript_client is None:
+                    self.pending_model = data
                     self.not_registered()
                     continue
                 self.javascript_client.send(data)
@@ -451,6 +453,12 @@ class Viewer:
             elif message_type == "L":
                 self.javascript_client = ws
                 print("Info: Browser as viewer client registered")
+                if self.pending_model is not None:
+                    self.debug_print("Sending pending model to browser")
+                    self.javascript_client.send(self.pending_model)
+                    self.pending_model = None
+                    if self.splash:
+                        self.splash = False
 
             elif message_type == "B":
                 model = orjson.loads(data)["model"]
