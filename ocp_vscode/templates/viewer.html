@@ -25,10 +25,11 @@ limitations under the License.
         <link rel="stylesheet" href="{{ styleSrc }}" />
         {{ standalone_scripts|safe }}
         <script type="module">
-            import { Viewer, Display, Timer } from "{{ scriptSrc }}";
+            import { Viewer, Display, Timer, PerformancePanel } from "{{ scriptSrc }}";
             {{ standalone_imports|safe }} // prettier-ignore
 
             var viewer = null;
+            new PerformancePanel(document.body, () => viewer);
             var display = null;
             var _shapes = null;
             var _meshData = null;
