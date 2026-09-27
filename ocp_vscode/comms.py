@@ -68,6 +68,7 @@ class MessageType(enum.IntEnum):
     BACKEND = 5
     BACKEND_RESPONSE = 6
     CONFIG = 7
+    EXACT = 8
 
 
 __all__ = [
@@ -155,6 +156,8 @@ def _send(data, message_type, port=None, timeit=False):
                 j = b"R:" + j
             elif message_type == MessageType.CONFIG:
                 j = b"S:" + j
+            elif message_type == MessageType.EXACT:
+                j = b"E:" + j
 
         with Timer(timeit, "", f"websocket connect ({message_type.name})", 1):
             try:
@@ -187,6 +190,10 @@ def _send(data, message_type, port=None, timeit=False):
                                     "— measurements/properties unavailable",
                                     flush=True,
                                 )
+                        elif message_type == MessageType.EXACT:
+                            result = json.loads(ws.recv(timeout=30))
+                            if not result.get("ok"):
+                                raise RuntimeError(result.get("error", "Exact scene rejected"))
 
             except (ConnectionRefusedError, OSError, WebSocketException) as ex:
                 comms_warning(f"Connection error: {ex}\nMessage: {data}")
@@ -226,6 +233,10 @@ def _send(data, message_type, port=None, timeit=False):
 def send_data(data, port=None, timeit=False):
     """Send data to the viewer"""
     return _send(data, MessageType.DATA, port, timeit)
+
+
+def send_exact(data, port=None, timeit=False):
+    return _send(data, MessageType.EXACT, port, timeit)
 
 
 def send_config(config, port=None, title=None, timeit=False):

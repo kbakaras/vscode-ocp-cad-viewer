@@ -684,6 +684,8 @@ def status(port=None, viewer=None, debug=False):
         return response.get("_debugStarted", False)
 
     collapse_val = response.get("collapse")
+    letter_mapping = {"1": -1, "R": 1, "C": 0, "E": 2}
+    collapse_val = letter_mapping.get(collapse_val, collapse_val)
     if collapse_val is not None:
         if collapse_val in COLLAPSE_REVERSE_MAPPING:
             response["collapse"] = COLLAPSE_REVERSE_MAPPING[collapse_val]

@@ -25,10 +25,16 @@ limitations under the License.
         <link rel="stylesheet" href="{{ styleSrc }}" />
         {{ standalone_scripts|safe }}
         <script type="module">
-            import { Viewer, Display, Timer, PerformancePanel } from "{{ scriptSrc }}";
+            import * as CADViewer from "{{ scriptSrc }}";
+            const { Viewer, Display, Timer, PerformancePanel } = CADViewer;
             {{ standalone_imports|safe }} // prettier-ignore
 
             var viewer = null;
+            const sceneStream = CADViewer.SceneStream ? new CADViewer.SceneStream() : {
+                revision: null,
+                reset() { this.revision = null; }
+            };
+            let sceneQueue = Promise.resolve();
             new PerformancePanel(document.body, () => viewer);
             var display = null;
             var _shapes = null;
@@ -256,6 +262,7 @@ limitations under the License.
                     }
                 }
                 if (changed) {
+                    message._scene_revision = sceneStream.revision;
                     send("status", message);
                 }
             }
@@ -689,7 +696,32 @@ limitations under the License.
                         ? JSON.parse(event.data)
                         : event.data;
 
+                if (data.type === "scene_full" || data.type === "scene_delta") {
+                    const received = performance.now();
+                    sceneQueue = sceneQueue.then(async () => {
+                        const applied = await sceneStream.apply(data, viewer,
+                            (tree, config) => {
+                                const states = viewer?.treeview?.getStates() || {};
+                                showViewer(tree, config);
+                                viewer.treeview.setStates(states);
+                                window.viewer = viewer;
+                            }, () => send("scene_resync", {}));
+                        if (!applied) return;
+                        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                        send("scene_applied", {revision: data.revision,
+                            browser_ms: performance.now() - received,
+                            bytes: typeof event.data === "string" ? new TextEncoder().encode(event.data).length : 0,
+                            ...data.metrics});
+                    }).catch(error => console.error("Scene update failed", error));
+                    return;
+                } else if (data.type === "scene_error") {
+                    console.error("Exact model update failed", data.error);
+                    return;
+                }
+
                 if (data.type === "data" && data?.data?.shapes?.parts?.length > 0) {
+                    sceneStream.reset();
+                    const received = performance.now();
                     const timer = new Timer("webView", data.config.timeit);
 
                     var old_states =
@@ -751,6 +783,12 @@ limitations under the License.
                     timer.split("states updated");
 
                     timer.stop();
+                    if (data.request_id) {
+                        requestAnimationFrame(() => requestAnimationFrame(() =>
+                            send("scene_applied", {request_id: data.request_id,
+                                browser_ms: performance.now() - received,
+                                bytes: typeof event.data === "string" ? new TextEncoder().encode(event.data).length : 0})));
+                    }
                 } else if (data.type === "screenshot") {
                     var promise = viewer.getImage(data.filename);
                     promise.then((result) => {

@@ -21,6 +21,7 @@ import shutil
 import socket
 import sys
 import time
+import threading
 import yaml
 from pathlib import Path
 from flask import Flask, render_template, request, redirect
@@ -31,6 +32,7 @@ from ocp_vscode.backend import ViewerBackend
 from ocp_vscode.backend_logo import logo
 from ocp_vscode.state import add_port, del_port
 from ocp_vscode.standalone_defaults import DEFAULTS
+from ocp_vscode.scene import SceneWorker, difference
 import pyperclip
 
 CONFIG_FILE = Path.home() / ".ocpvscode_standalone"
@@ -70,6 +72,7 @@ def COMMS(host, port, max_retries=None):
             }}
         }};
         const standaloneViewer = () => {{
+            if (sceneStream.revision !== null) return;
             
             const ocpLogo = logo();
             
@@ -226,6 +229,10 @@ class Viewer:
         self.javascript_client = None
         self.pending_model = None
         self.splash = True
+        self.scene_lock = threading.RLock()
+        self.scene = None
+        self.browser_revision = None
+        self.scenes = SceneWorker(self.publish_scene, self.scene_error)
 
         self.sock.route("/")(self.handle_message)
         self.app.add_url_rule("/viewer", "viewer", self.index)
@@ -356,9 +363,52 @@ class Viewer:
             "\nNo browser registered. Please open the viewer in a browser or refresh the viewer page\n"
         )
 
+    def send_scene_snapshot(self):
+        if self.scene is not None and self.javascript_client is not None:
+            try:
+                self.javascript_client.send(orjson.dumps(self.scene).decode("utf-8"))
+                self.browser_revision = self.scene["revision"]
+            except Exception:
+                self.javascript_client = None
+                self.browser_revision = None
+
+    def publish_scene(self, snapshot, previous, index):
+        with self.scene_lock:
+            self.backend.model = index
+            self.scene = snapshot
+            self.status.pop("scene_error", None)
+            self.splash = False
+            if self.javascript_client is None:
+                return
+            if previous is None or self.browser_revision != previous["revision"] or previous["tree"]["id"] != snapshot["tree"]["id"]:
+                self.send_scene_snapshot()
+                return
+            try:
+                self.javascript_client.send(orjson.dumps(difference(previous, snapshot)).decode("utf-8"))
+                self.browser_revision = snapshot["revision"]
+            except Exception:
+                self.javascript_client = None
+                self.browser_revision = None
+
+    def scene_error(self, revision, exc):
+        print(f"Exact scene {revision} failed: {exc}", flush=True)
+        with self.scene_lock:
+            self.status["scene_error"] = dict(revision=revision, error=str(exc))
+            if self.javascript_client is not None:
+                try:
+                    self.javascript_client.send(orjson.dumps(dict(type="scene_error", revision=revision, error=str(exc))).decode("utf-8"))
+                except Exception:
+                    self.javascript_client = None
+
     def handle_message(self, ws):
         while True:
             data = ws.receive()
+            if data is None:
+                with self.scene_lock:
+                    if self.javascript_client is ws:
+                        self.javascript_client = None
+                        self.browser_revision = None
+                return
             if isinstance(data, bytes):
                 data = data.decode("utf-8")
 
@@ -378,6 +428,7 @@ class Viewer:
                     self.debug_print(f"[{message_type}] Received config command")
                     self.configure(self.params)
                     self.config["_splash"] = self.splash
+                    self.config["_brep_scene_protocol"] = 1
                     self.python_client.send(orjson.dumps(self.config))
 
                 elif cmd.get("type") == "screenshot":
@@ -394,7 +445,18 @@ class Viewer:
                         continue
                     self.javascript_client.send(data)
 
+            elif message_type == "E":
+                try:
+                    revision = self.scenes.submit(orjson.loads(data))
+                    ws.send(orjson.dumps(dict(ok=True, revision=revision)))
+                except Exception as exc:
+                    ws.send(orjson.dumps(dict(ok=False, error=str(exc))))
+
             elif message_type == "D":
+                self.scenes.cancel_pending()
+                with self.scene_lock:
+                    self.scene = None
+                    self.browser_revision = None
                 self.python_client = ws
                 self.debug_print(f"[{message_type}] Received a new model")
                 if self.javascript_client is None:
@@ -406,9 +468,17 @@ class Viewer:
                     self.splash = False
 
             elif message_type == "U":
-                self.javascript_client = ws
+                if ws is not self.javascript_client:
+                    continue
                 message = orjson.loads(data)
-                if message["command"] == "screenshot":
+                if message["command"] == "scene_resync":
+                    with self.scene_lock:
+                        self.send_scene_snapshot()
+                elif message["command"] == "scene_applied":
+                    with self.scene_lock:
+                        if self.scene is None or message["text"].get("revision") == self.scene["revision"]:
+                            self.status["scene_metrics"] = message["text"]
+                elif message["command"] == "screenshot":
                     filename = message["text"]["filename"]
                     data_url = message["text"]["data"]
                     self.debug_print(
@@ -439,7 +509,9 @@ class Viewer:
                             pyperclip.copy((",").join(changes.get("selected", [])))
 
                         self.status[key] = value
-                    self.backend.handle_event(changes, MessageType.UPDATES)
+                    with self.scene_lock:
+                        if self.scene is None or changes.get("_scene_revision") == self.scene["revision"]:
+                            self.backend.handle_event(changes, MessageType.UPDATES)
 
             elif message_type == "S":
                 self.python_client = ws
@@ -453,6 +525,10 @@ class Viewer:
             elif message_type == "L":
                 self.javascript_client = ws
                 print("Info: Browser as viewer client registered")
+                with self.scene_lock:
+                    if self.scene is not None:
+                        self.send_scene_snapshot()
+                        continue
                 if self.pending_model is not None:
                     self.debug_print("Sending pending model to browser")
                     self.javascript_client.send(self.pending_model)

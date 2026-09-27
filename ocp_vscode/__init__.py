@@ -21,6 +21,7 @@ __version__ = "3.4.0"
 import os
 
 from .show import *
+from .brep import export_brep
 from .config import *
 from .comms import *
 from .utils import *

@@ -22,6 +22,7 @@ import re
 import time
 import traceback
 import types
+from uuid import uuid4
 from enum import Enum
 from logging import Logger
 
@@ -58,6 +59,7 @@ from ocp_tessellate.ocp_utils import (
 )
 from ocp_tessellate.utils import Color, Timer, numpy_to_buffer_json
 from threejs_materials import PbrProperties
+from ocp_vscode.brep import encode_scene, source_ids
 
 from ocp_vscode.colors import BaseColorMap, get_colormap
 from ocp_vscode.utils import is_pymat_material, is_build123d_material
@@ -221,10 +223,16 @@ def _tessellate(
     progress=None,
     **kwargs,
 ):
+    started = time.perf_counter()
     viewer = kwargs.get("viewer")
     port = kwargs.get("port")
 
     conf = combined_config(viewer=viewer, port=port)
+    requested = kwargs.pop("server_tessellation", None)
+    supported = conf.pop("_brep_scene_protocol", None) == 1
+    exact = not is_jupyter_cadquery and (supported if requested is None else requested)
+    if exact and not supported:
+        raise RuntimeError("Viewer does not support server tessellation")
     if conf.get("_splash"):
         if conf.get("reset_camera") not in [
             Camera.ISO,
@@ -438,6 +446,14 @@ def _tessellate(
     if kwargs.get("debug") is not None and kwargs["debug"]:
         print("\ntessellation parameters:\n", params)
 
+    if exact:
+        if params.get("orbit_control") is not None:
+            params["control"] = "orbit" if params["orbit_control"] else "trackball"
+        packet = encode_scene(part_group, instances, params,
+                              source_ids(cad_objs, names, part_group.name), extracted_materials)
+        packet["client_prepare_ms"] = (time.perf_counter() - started) * 1000
+        return None, packet, params, part_group.count_shapes(), None, None
+
     with Timer(timeit, "", "tessellate", 1):
         instances, shapes, mapping = tessellate_group(
             part_group, instances, params, progress, params.get("timeit")
@@ -518,6 +534,9 @@ def _convert(
         **kwargs,
     )
 
+    if shapes.get("protocol") == 1:
+        return {"type": "exact", "data": shapes}, None
+
     if extracted_materials:
         shapes["materials"] = extracted_materials
 
@@ -596,6 +615,7 @@ def show(
     alphas=None,
     modes=None,
     materials=None,
+    server_tessellation=None,
     port=None,
     progress="-+*c",
     glass=None,
@@ -937,6 +957,10 @@ def _show(*cad_objs, **kwargs):
         return t, mapping
 
     with Timer(timeit, "", "send"):
+        if t.get("type") == "exact":
+            from ocp_vscode.comms import send_exact
+            return send_exact(t["data"], port=port, timeit=timeit)
+        t["request_id"] = str(uuid4())
         viewer = send_data(t, port=port, timeit=timeit)
 
     if is_jupyter_cadquery:
@@ -944,6 +968,7 @@ def _show(*cad_objs, **kwargs):
         return viewer
     else:
         send_backend({"model": mapping}, port=port, timeit=timeit)
+        return {"ok": True, "request_id": t["request_id"]}
 
 
 def reset_show():
