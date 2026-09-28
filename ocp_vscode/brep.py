@@ -24,11 +24,11 @@ def json_default(value):
 
 
 def source_ids(objects, names, root_name):
-    """Read optional viewer_id without depending on the modelling library."""
+    """Read optional hash_id without depending on the modelling library."""
     result = {}
 
     def walk(obj, path):
-        identity = getattr(obj, "viewer_id", None)
+        identity = getattr(obj, "hash_id", None)
         if identity is not None:
             result[path] = str(identity)
         if isinstance(obj, dict):
@@ -61,7 +61,7 @@ def encode_scene(group, instances, config, identities=None, materials=None):
             node["parts"] = [walk(child, node["id"], source_path) for child in obj.objects]
             ids = [child["id"] for child in node["parts"]]
             if len(ids) != len(set(ids)):
-                raise ValueError(f"Duplicate viewer_id in {node['id']}")
+                raise ValueError(f"Duplicate hash_id in {node['id']}")
         else:
             color = obj.color
             node.update(state=[obj.state_faces, obj.state_edges], width=obj.width,

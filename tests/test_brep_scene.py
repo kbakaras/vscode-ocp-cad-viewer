@@ -68,7 +68,7 @@ class ExactSceneTest(unittest.TestCase):
 
     def test_identity_survives_display_rename(self):
         class Group(dict):
-            viewer_id = "fixed-id"
+            hash_id = "fixed-id"
         snapshots = []
         for label in ("Bolt 1", "Bolt 2"):
             objects = [{label: Group(Body=Box(1, 2, 3))}]
