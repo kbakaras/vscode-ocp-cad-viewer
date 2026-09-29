@@ -29,7 +29,7 @@ def source_metadata(objects, names, root_name):
 
     def walk(obj, path):
         attrs = {}
-        for key in ("hash_id", "layer", "visible_if_any"):
+        for key in ("hash_id", "layer", "visible_if_any", "visibility_owner", "tree_leaf"):
             value = getattr(obj, key, None)
             if value is not None:
                 attrs[key] = value
@@ -48,7 +48,7 @@ def source_metadata(objects, names, root_name):
 
 def apply_metadata(tree, metadata):
     """Назначает слои и разрешает ссылки на присутствующие панели сцены."""
-    layers, identities, dependencies = {}, {}, []
+    layers, identities, dependencies, owners = {}, {}, [], []
 
     def walk(node, parent):
         path = f"{parent}/{node['name']}"
@@ -65,6 +65,10 @@ def apply_metadata(tree, metadata):
             node["layer"] = id
         if attrs.get("visible_if_any") is not None:
             dependencies.append((node, attrs["visible_if_any"]))
+        if attrs.get("visibility_owner") is not None:
+            owners.append((node, str(attrs["visibility_owner"])))
+        if attrs.get("tree_leaf"):
+            node["tree_leaf"] = True
         for child in node.get("parts", ()):
             walk(child, path)
     walk(tree, "")
@@ -72,6 +76,10 @@ def apply_metadata(tree, metadata):
         node["visible_if_any"] = list(dict.fromkeys(
             identities[str(ref)] for ref in refs if str(ref) in identities
         ))
+    for node, owner in owners:
+        if owner not in identities:
+            raise ValueError(f"Unknown visibility owner {owner} at {node['id']}")
+        node["visibility_owner"] = identities[owner]
     if layers:
         tree["layers"] = layers
     return tree

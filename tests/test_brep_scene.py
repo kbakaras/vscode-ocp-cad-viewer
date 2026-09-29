@@ -52,9 +52,48 @@ class ExactSceneTest(unittest.TestCase):
             {"id": "/Model/N", "name": "N"},
         ]}
         apply_metadata(tree, {"/Model/P": {"hash_id": "p"},
-                              "/Model/N": {"layer": ("labels", "Надписи"), "visible_if_any": ("p",)}})
+                              "/Model/N": {"layer": ("labels", "Надписи"), "visible_if_any": ("p",),
+                                           "visibility_owner": "p", "tree_leaf": True}})
         self.assertEqual(tree["parts"][1]["visible_if_any"], ["/Model/P"])
         self.assertEqual(tree["layers"], {"labels": "Надписи"})
+        self.assertEqual(tree["parts"][1]["visibility_owner"], "/Model/P")
+        self.assertTrue(tree["parts"][1]["tree_leaf"])
+
+    def test_hardware_tree_metadata_survives_snapshots_and_property_deltas(self):
+        class Group(dict):
+            def __init__(self, *args, **attrs):
+                super().__init__(*args)
+                self.__dict__.update(attrs)
+
+        owner = Group({"Panel": Group({"Body": Box(10, 20, 30)}, hash_id="panel")}, hash_id="module")
+        bolt = Group({"Body": Box(2, 2, 10)}, hash_id="bolt",
+                     visibility_owner="module", visible_if_any=("panel",))
+        model = {"Product": {"Module": owner},
+                 "Hardware": Group({"Bolts": Group({"Bolt": bolt}, tree_leaf=True)},
+                                   layer=("hardware", "Фурнитура"))}
+        group, instances = to_ocpgroup(model, names=["Model"])
+        p = encode_scene(group, instances, {}, source_metadata([model], ["Model"], group.name))
+        a, _ = build_snapshot(p, 1)
+        flat = flatten(a["tree"])
+        kind, element = "/Model/Hardware/Bolts", "/Model/Hardware/Bolts/bolt"
+        self.assertTrue(flat[kind]["tree_leaf"])
+        self.assertEqual(flat[element]["visibility_owner"], "/Model/Product/module")
+        self.assertEqual(flat[element]["visible_if_any"], ["/Model/Product/module/panel"])
+        raw_kind = p["tree"]["parts"][1]["parts"][0]
+        del raw_kind["tree_leaf"]
+        del raw_kind["parts"][0]["visibility_owner"]
+        b, _ = build_snapshot(p, 2)
+        delta = difference(a, b)
+        self.assertFalse(delta["meshes"] or delta["add"] or delta["remove"])
+        self.assertEqual({node["id"] for node in delta["update"]}, {kind, element})
+        self.assertEqual(b["metrics"]["cache_misses"], 0)
+        self.assertNotIn("tree_leaf", flatten(b["tree"])[kind])
+        self.assertNotIn("visibility_owner", flatten(b["tree"])[element])
+
+    def test_unknown_visibility_owner_is_rejected(self):
+        tree = {"id": "/Model", "name": "Model", "parts": []}
+        with self.assertRaisesRegex(ValueError, "Unknown visibility owner"):
+            apply_metadata(tree, {"/Model": {"visibility_owner": "absent"}})
 
     def test_export_needs_neither_connection_nor_client_tessellation(self):
         with tempfile.TemporaryDirectory() as tmp, patch("ocp_tessellate.convert.tessellate", side_effect=AssertionError):
