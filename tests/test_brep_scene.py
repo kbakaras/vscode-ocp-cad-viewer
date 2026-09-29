@@ -26,7 +26,7 @@ class ExactSceneTest(unittest.TestCase):
                 super().__init__(*args)
                 self.__dict__.update(attrs)
 
-        panel = Group({"Body": Box(10, 20, 30)}, hash_id="panel-id")
+        panel = Group({"Body": Box(10, 20, 30)}, hash_id="panel-id", selection_root=True)
         labels = Group({"Text": Box(1, 2, 1)}, layer=("labels", "Надписи"),
                        visible_if_any=("panel-id",))
         panel["Name"] = labels
@@ -40,24 +40,30 @@ class ExactSceneTest(unittest.TestCase):
         self.assertEqual(flat["/Model/panel-id/Name"]["visible_if_any"], ["/Model/panel-id"])
         self.assertEqual(flat["/Model/Hardware/Bolt"]["visible_if_any"], ["/Model/panel-id"])
         self.assertEqual(flat["/Model/panel-id/Name"]["layer"], "labels")
+        self.assertTrue(flat["/Model/panel-id"]["selection_root"])
+        del p["tree"]["parts"][0]["selection_root"]
         p["tree"]["parts"][0]["parts"][1]["visible_if_any"] = []
         b, _ = build_snapshot(p, 2)
         delta = difference(a, b)
         self.assertFalse(delta["meshes"] or delta["add"] or delta["remove"])
-        self.assertEqual(delta["update"][0]["visible_if_any"], [])
+        updates = {node["id"]: node for node in delta["update"]}
+        self.assertEqual(updates["/Model/panel-id/Name"]["visible_if_any"], [])
+        self.assertNotIn("selection_root", updates["/Model/panel-id"])
+        self.assertEqual(b["metrics"]["cache_misses"], 0)
 
     def test_metadata_also_applies_to_client_tessellated_tree(self):
         tree = {"id": "/Model", "name": "Model", "parts": [
             {"id": "/Model/P", "name": "P"},
             {"id": "/Model/N", "name": "N"},
         ]}
-        apply_metadata(tree, {"/Model/P": {"hash_id": "p"},
+        apply_metadata(tree, {"/Model/P": {"hash_id": "p", "selection_root": True},
                               "/Model/N": {"layer": ("labels", "Надписи"), "visible_if_any": ("p",),
                                            "visibility_owner": "p", "tree_leaf": True}})
         self.assertEqual(tree["parts"][1]["visible_if_any"], ["/Model/P"])
         self.assertEqual(tree["layers"], {"labels": "Надписи"})
         self.assertEqual(tree["parts"][1]["visibility_owner"], "/Model/P")
         self.assertTrue(tree["parts"][1]["tree_leaf"])
+        self.assertTrue(tree["parts"][0]["selection_root"])
 
     def test_hardware_tree_metadata_survives_snapshots_and_property_deltas(self):
         class Group(dict):

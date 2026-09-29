@@ -703,7 +703,7 @@ limitations under the License.
                             (tree, config) => {
                                 const states = viewer?.treeview?.getStates() || {};
                                 showViewer(tree, config);
-                                viewer.treeview.setStates(states);
+                                viewer.treeview.setStates(states, true);
                                 window.viewer = viewer;
                             }, () => send("scene_resync", {}));
                         if (!applied) return;

@@ -29,7 +29,8 @@ def source_metadata(objects, names, root_name):
 
     def walk(obj, path):
         attrs = {}
-        for key in ("hash_id", "layer", "visible_if_any", "visibility_owner", "tree_leaf"):
+        for key in ("hash_id", "layer", "visible_if_any", "visibility_owner", "tree_leaf",
+                    "selection_root"):
             value = getattr(obj, key, None)
             if value is not None:
                 attrs[key] = value
@@ -69,6 +70,8 @@ def apply_metadata(tree, metadata):
             owners.append((node, str(attrs["visibility_owner"])))
         if attrs.get("tree_leaf"):
             node["tree_leaf"] = True
+        if attrs.get("selection_root"):
+            node["selection_root"] = True
         for child in node.get("parts", ()):
             walk(child, path)
     walk(tree, "")
