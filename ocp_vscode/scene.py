@@ -105,6 +105,9 @@ def build_snapshot(packet, revision):
 
     def restore(node):
         node["name"] = nodes[node["id"]]["name"]
+        for key in ("layer", "layers", "visible_if_any"):
+            if key in nodes[node["id"]]:
+                node[key] = nodes[node["id"]][key]
         if "parts" in node:
             for child in node["parts"]:
                 restore(child)

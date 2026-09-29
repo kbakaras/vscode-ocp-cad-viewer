@@ -23,14 +23,18 @@ def json_default(value):
     raise TypeError(f"Cannot encode {type(value).__name__}")
 
 
-def source_ids(objects, names, root_name):
-    """Read optional hash_id without depending on the modelling library."""
+def source_metadata(objects, names, root_name):
+    """Читает идентификаторы, слои и связи без зависимости от библиотеки модели."""
     result = {}
 
     def walk(obj, path):
-        identity = getattr(obj, "hash_id", None)
-        if identity is not None:
-            result[path] = str(identity)
+        attrs = {}
+        for key in ("hash_id", "layer", "visible_if_any"):
+            value = getattr(obj, key, None)
+            if value is not None:
+                attrs[key] = value
+        if attrs:
+            result[path] = attrs
         if isinstance(obj, dict):
             for name, child in obj.items():
                 walk(child, f"{path}/{name}")
@@ -42,9 +46,40 @@ def source_ids(objects, names, root_name):
     return result
 
 
-def encode_scene(group, instances, config, identities=None, materials=None):
+def apply_metadata(tree, metadata):
+    """Назначает слои и разрешает ссылки на присутствующие панели сцены."""
+    layers, identities, dependencies = {}, {}, []
+
+    def walk(node, parent):
+        path = f"{parent}/{node['name']}"
+        attrs = metadata.get(path, {})
+        if attrs.get("hash_id") is not None:
+            identities[str(attrs["hash_id"])] = node["id"]
+        if attrs.get("layer") is not None:
+            id, name = attrs["layer"]
+            if not isinstance(id, str) or not id.strip() or not isinstance(name, str) or not name.strip():
+                raise ValueError(f"Invalid layer at {path}")
+            if id in layers and layers[id] != name:
+                raise ValueError(f"Conflicting layer names: {id}")
+            layers[id] = name
+            node["layer"] = id
+        if attrs.get("visible_if_any") is not None:
+            dependencies.append((node, attrs["visible_if_any"]))
+        for child in node.get("parts", ()):
+            walk(child, path)
+    walk(tree, "")
+    for node, refs in dependencies:
+        node["visible_if_any"] = list(dict.fromkeys(
+            identities[str(ref)] for ref in refs if str(ref) in identities
+        ))
+    if layers:
+        tree["layers"] = layers
+    return tree
+
+
+def encode_scene(group, instances, config, metadata=None, materials=None):
     geometries = {}
-    identities = identities or {}
+    metadata = metadata or {}
 
     def geometry(shape):
         raw = serialize(shape, triangles=False, normals=False)
@@ -54,7 +89,7 @@ def encode_scene(group, instances, config, identities=None, materials=None):
 
     def walk(obj, parent, source_parent):
         source_path = f"{source_parent}/{obj.name}"
-        segment = quote(identities.get(source_path, obj.name), safe="")
+        segment = quote(str(metadata.get(source_path, {}).get("hash_id", obj.name)), safe="")
         node = dict(id=f"{parent}/{segment}", name=obj.name, kind=obj.kind,
                     loc=None if obj.loc is None else loc_to_tq(obj.loc))
         if isinstance(obj, OcpGroup):
@@ -81,7 +116,7 @@ def encode_scene(group, instances, config, identities=None, materials=None):
                 node.update(image=obj.image, image_type=obj.image_type, height=obj.height)
         return node
 
-    packet = dict(protocol=PROTOCOL_VERSION, tree=walk(group, "", ""),
+    packet = dict(protocol=PROTOCOL_VERSION, tree=apply_metadata(walk(group, "", ""), metadata),
                   geometries=geometries, config=config, materials=materials)
     # Validate now, before a partially encoded message can reach the server.
     return json.loads(json.dumps(packet, default=json_default, ensure_ascii=False))
@@ -141,7 +176,7 @@ def export_brep(filename, *cad_objs, names=None, colors=None, alphas=None,
     group, instances = to_ocpgroup(*cad_objs, names=names, colors=colors,
                                   alphas=alphas, modes=modes, materials=materials)
     packet = encode_scene(group, instances, config,
-                          source_ids(cad_objs, names, group.name))
+                          source_metadata(cad_objs, names, group.name))
     path = Path(filename)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(packet, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

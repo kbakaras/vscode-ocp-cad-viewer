@@ -59,7 +59,7 @@ from ocp_tessellate.ocp_utils import (
 )
 from ocp_tessellate.utils import Color, Timer, numpy_to_buffer_json
 from threejs_materials import PbrProperties
-from ocp_vscode.brep import encode_scene, source_ids
+from ocp_vscode.brep import apply_metadata, encode_scene, source_metadata
 
 from ocp_vscode.colors import BaseColorMap, get_colormap
 from ocp_vscode.utils import is_pymat_material, is_build123d_material
@@ -446,11 +446,12 @@ def _tessellate(
     if kwargs.get("debug") is not None and kwargs["debug"]:
         print("\ntessellation parameters:\n", params)
 
+    metadata = source_metadata(cad_objs, names, part_group.name)
     if exact:
         if params.get("orbit_control") is not None:
             params["control"] = "orbit" if params["orbit_control"] else "trackball"
         packet = encode_scene(part_group, instances, params,
-                              source_ids(cad_objs, names, part_group.name), extracted_materials)
+                              metadata, extracted_materials)
         packet["client_prepare_ms"] = (time.perf_counter() - started) * 1000
         return None, packet, params, part_group.count_shapes(), None, None
 
@@ -458,6 +459,7 @@ def _tessellate(
         instances, shapes, mapping = tessellate_group(
             part_group, instances, params, progress, params.get("timeit")
         )
+    apply_metadata(shapes, metadata)
 
     # `params["states"]` is normally populated from `conf["states"]` (the
     # user's current tree selections, pulled from status() via combined_config

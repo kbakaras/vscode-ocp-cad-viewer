@@ -9,7 +9,7 @@ from unittest.mock import patch
 from build123d import Box, Pos
 from ocp_tessellate.convert import to_ocpgroup
 
-from ocp_vscode.brep import encode_scene, export_brep, source_ids
+from ocp_vscode.brep import apply_metadata, encode_scene, export_brep, source_metadata
 from ocp_vscode.scene import SceneWorker, build_snapshot, difference, flatten
 
 
@@ -20,6 +20,42 @@ def packet(width=10, x=0, color="#aabbcc", deviation=0.1):
 
 
 class ExactSceneTest(unittest.TestCase):
+    def test_layers_and_dependencies_survive_snapshot_and_property_delta(self):
+        class Group(dict):
+            def __init__(self, *args, **attrs):
+                super().__init__(*args)
+                self.__dict__.update(attrs)
+
+        panel = Group({"Body": Box(10, 20, 30)}, hash_id="panel-id")
+        labels = Group({"Text": Box(1, 2, 1)}, layer=("labels", "Надписи"),
+                       visible_if_any=("panel-id",))
+        panel["Name"] = labels
+        bolt = Group({"Body": Box(2, 2, 10)}, visible_if_any=("panel-id", "outside-id"))
+        model = {"Panel": panel, "Hardware": Group({"Bolt": bolt}, layer=("hardware", "Фурнитура"))}
+        group, instances = to_ocpgroup(model, names=["Model"])
+        p = encode_scene(group, instances, {}, source_metadata([model], ["Model"], group.name))
+        a, _ = build_snapshot(p, 1)
+        flat = flatten(a["tree"])
+        self.assertEqual(a["tree"]["layers"], {"labels": "Надписи", "hardware": "Фурнитура"})
+        self.assertEqual(flat["/Model/panel-id/Name"]["visible_if_any"], ["/Model/panel-id"])
+        self.assertEqual(flat["/Model/Hardware/Bolt"]["visible_if_any"], ["/Model/panel-id"])
+        self.assertEqual(flat["/Model/panel-id/Name"]["layer"], "labels")
+        p["tree"]["parts"][0]["parts"][1]["visible_if_any"] = []
+        b, _ = build_snapshot(p, 2)
+        delta = difference(a, b)
+        self.assertFalse(delta["meshes"] or delta["add"] or delta["remove"])
+        self.assertEqual(delta["update"][0]["visible_if_any"], [])
+
+    def test_metadata_also_applies_to_client_tessellated_tree(self):
+        tree = {"id": "/Model", "name": "Model", "parts": [
+            {"id": "/Model/P", "name": "P"},
+            {"id": "/Model/N", "name": "N"},
+        ]}
+        apply_metadata(tree, {"/Model/P": {"hash_id": "p"},
+                              "/Model/N": {"layer": ("labels", "Надписи"), "visible_if_any": ("p",)}})
+        self.assertEqual(tree["parts"][1]["visible_if_any"], ["/Model/P"])
+        self.assertEqual(tree["layers"], {"labels": "Надписи"})
+
     def test_export_needs_neither_connection_nor_client_tessellation(self):
         with tempfile.TemporaryDirectory() as tmp, patch("ocp_tessellate.convert.tessellate", side_effect=AssertionError):
             p = export_brep(Path(tmp) / "scene.json", {"Panel": Box(10, 20, 30)}, names=["Model"])
@@ -64,7 +100,7 @@ class ExactSceneTest(unittest.TestCase):
             build_snapshot(p, 1)
         group, instances = to_ocpgroup({"A": Box(1, 2, 3), "B": Box(1, 2, 3)}, names=["Model"])
         with self.assertRaisesRegex(ValueError, "Duplicate"):
-            encode_scene(group, instances, {}, {"/Model/A": "same", "/Model/B": "same"})
+            encode_scene(group, instances, {}, {"/Model/A": {"hash_id": "same"}, "/Model/B": {"hash_id": "same"}})
 
     def test_identity_survives_display_rename(self):
         class Group(dict):
@@ -73,7 +109,7 @@ class ExactSceneTest(unittest.TestCase):
         for label in ("Bolt 1", "Bolt 2"):
             objects = [{label: Group(Body=Box(1, 2, 3))}]
             group, instances = to_ocpgroup(*objects, names=["Model"])
-            p = encode_scene(group, instances, {}, source_ids(objects, ["Model"], group.name))
+            p = encode_scene(group, instances, {}, source_metadata(objects, ["Model"], group.name))
             snapshots.append(build_snapshot(p, len(snapshots) + 1)[0])
         d = difference(*snapshots)
         self.assertFalse(d["add"] or d["remove"] or d["meshes"])
