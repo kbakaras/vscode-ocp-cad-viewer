@@ -26,7 +26,7 @@ limitations under the License.
         {{ standalone_scripts|safe }}
         <script type="module">
             import * as CADViewer from "{{ scriptSrc }}";
-            const { Viewer, Display, Timer, PerformancePanel } = CADViewer;
+            const { Viewer, Display, Timer, PerformancePanel, CameraPanel } = CADViewer;
             {{ standalone_imports|safe }} // prettier-ignore
 
             var viewer = null;
@@ -35,7 +35,11 @@ limitations under the License.
                 reset() { this.revision = null; }
             };
             let sceneQueue = Promise.resolve();
-            new PerformancePanel(document.body, () => viewer);
+            const diagnostics = document.createElement("div");
+            diagnostics.className = "tcv-diagnostics";
+            document.body.append(diagnostics);
+            new CameraPanel(diagnostics, () => viewer);
+            new PerformancePanel(diagnostics, () => viewer);
             var display = null;
             var _shapes = null;
             var _meshData = null;

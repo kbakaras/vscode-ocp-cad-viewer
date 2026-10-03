@@ -380,7 +380,11 @@ class Viewer:
             self.splash = False
             if self.javascript_client is None:
                 return
-            if previous is None or self.browser_revision != previous["revision"] or previous["tree"]["id"] != snapshot["tree"]["id"]:
+            # Deltas preserve the browser camera and do not apply scene config.
+            reset_camera = str(snapshot["config"].get("reset_camera", "keep")).lower()
+            if (previous is None or self.browser_revision != previous["revision"]
+                    or previous["tree"]["id"] != snapshot["tree"]["id"]
+                    or reset_camera != "keep"):
                 self.send_scene_snapshot()
                 return
             try:
