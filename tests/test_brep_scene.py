@@ -27,7 +27,7 @@ class ExactSceneTest(unittest.TestCase):
                 self.__dict__.update(attrs)
 
         panel = Group({"Body": Box(10, 20, 30)}, hash_id="panel-id", selection_root=True)
-        labels = Group({"Text": Box(1, 2, 1)}, layer=("labels", "Надписи"),
+        labels = Group({"Text": Box(1, 2, 1)}, layer=("labels", "Надписи"), layer_visible=False,
                        visible_if_any=("panel-id",))
         panel["Name"] = labels
         bolt = Group({"Body": Box(2, 2, 10)}, visible_if_any=("panel-id", "outside-id"))
@@ -37,6 +37,7 @@ class ExactSceneTest(unittest.TestCase):
         a, _ = build_snapshot(p, 1)
         flat = flatten(a["tree"])
         self.assertEqual(a["tree"]["layers"], {"labels": "Надписи", "hardware": "Фурнитура"})
+        self.assertEqual(a["tree"]["layer_defaults"], {"labels": False, "hardware": True})
         self.assertEqual(flat["/Model/panel-id/Name"]["visible_if_any"], ["/Model/panel-id"])
         self.assertEqual(flat["/Model/Hardware/Bolt"]["visible_if_any"], ["/Model/panel-id"])
         self.assertEqual(flat["/Model/panel-id/Name"]["layer"], "labels")

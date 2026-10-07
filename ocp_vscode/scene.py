@@ -105,7 +105,7 @@ def build_snapshot(packet, revision):
 
     def restore(node):
         node["name"] = nodes[node["id"]]["name"]
-        for key in ("layer", "layers", "visible_if_any", "visibility_owner", "tree_leaf",
+        for key in ("layer", "layers", "layer_defaults", "visible_if_any", "visibility_owner", "tree_leaf",
                     "selection_root"):
             if key in nodes[node["id"]]:
                 node[key] = nodes[node["id"]][key]

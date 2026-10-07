@@ -29,7 +29,7 @@ def source_metadata(objects, names, root_name):
 
     def walk(obj, path):
         attrs = {}
-        for key in ("hash_id", "layer", "visible_if_any", "visibility_owner", "tree_leaf",
+        for key in ("hash_id", "layer", "layer_visible", "visible_if_any", "visibility_owner", "tree_leaf",
                     "selection_root"):
             value = getattr(obj, key, None)
             if value is not None:
@@ -49,7 +49,7 @@ def source_metadata(objects, names, root_name):
 
 def apply_metadata(tree, metadata):
     """Назначает слои и разрешает ссылки на присутствующие панели сцены."""
-    layers, identities, dependencies, owners = {}, {}, [], []
+    layers, layer_defaults, identities, dependencies, owners = {}, {}, {}, [], []
 
     def walk(node, parent):
         path = f"{parent}/{node['name']}"
@@ -62,7 +62,11 @@ def apply_metadata(tree, metadata):
                 raise ValueError(f"Invalid layer at {path}")
             if id in layers and layers[id] != name:
                 raise ValueError(f"Conflicting layer names: {id}")
+            visible = attrs.get("layer_visible", True)
+            if id in layer_defaults and layer_defaults[id] != visible:
+                raise ValueError(f"Conflicting layer visibility: {id}")
             layers[id] = name
+            layer_defaults[id] = visible
             node["layer"] = id
         if attrs.get("visible_if_any") is not None:
             dependencies.append((node, attrs["visible_if_any"]))
@@ -85,6 +89,7 @@ def apply_metadata(tree, metadata):
         node["visibility_owner"] = identities[owner]
     if layers:
         tree["layers"] = layers
+        tree["layer_defaults"] = layer_defaults
     return tree
 
 
