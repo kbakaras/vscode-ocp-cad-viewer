@@ -14,7 +14,6 @@ Visual defaults applied to every newly shown object.
 | `new_tree_behavior`  | boolean  | `true`             | Eye icon controls both faces and edges; mesh icon controls only the mesh                                          |
 | `dark`               | boolean  | `false`            | **DEPRECATED** — use `theme` instead                                                                              |
 | `theme`              | enum     | `browser`          | `browser` / `light` / `dark`                                                                                      |
-| `orbit_control`      | boolean  | `false`            | `orbit` control mode instead of `trackball`                                                                       |
 | `up`                 | enum     | `Z`                | Up direction: `Z` / `Y` / `L` (legacy)                                                                            |
 | `rotate_speed`       | number   | `1`                | Rotation speed                                                                                                    |
 | `zoom_speed`         | number   | `1`                | Zoom speed                                                                                                        |
@@ -31,7 +30,6 @@ Visual defaults applied to every newly shown object.
 | `ticks`              | number   | `5`                | Hint for grid tick count                                                                                          |
 | `transparent`        | boolean  | `false`            | Show objects transparent                                                                                          |
 | `default_opacity`    | number   | `0.5`              | Opacity for transparent objects                                                                                   |
-| `explode`            | boolean  | `false`            | Turn explode mode on                                                                                              |
 | `reset_camera`       | enum     | `KEEP`             | Camera behavior between `show` calls: `RESET` / `KEEP` / `CENTER` / `ISO` / `TOP` / `BOTTOM` / `LEFT` / `RIGHT` / `FRONT` / `BACK` |
 | `modifier_keys`      | object   | see settings.json  | Mapping of `shift` / `ctrl` / `meta` / `alt` to JS modifier key names                                             |
 

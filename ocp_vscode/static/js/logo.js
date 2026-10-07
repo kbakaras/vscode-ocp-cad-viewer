@@ -210,7 +210,6 @@ export const logo = () => {
             black_edges: false,
             center_grid: true,
             collapse: 2,
-            control: "trackball",
             debug: false,
             default_color: "#e8b024",
             default_edgecolor: "#707070",

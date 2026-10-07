@@ -136,7 +136,7 @@ class StudioTextureMapping(Enum):
 
 
 class AnalysisTool(Enum):
-    """Analysis tools for the CAD viewer (mutually exclusive with explode)."""
+    """Analysis tools for the CAD viewer."""
 
     PROPERTIES = "properties"
     DISTANCE = "distance"
@@ -149,7 +149,6 @@ class UiTab(Enum):
 
     TREE = "tree"
     CLIP = "clip"
-    ZEBRA = "zebra"
     MATERIAL = "material"
     STUDIO = "studio"
 
@@ -177,7 +176,6 @@ CONFIG_UI_KEYS = [
     "clip_slider_1",
     "clip_slider_2",
     "direct_intensity",
-    "explode",
     "grid",
     "metalness",
     "ortho",
@@ -195,11 +193,6 @@ CONFIG_UI_KEYS = [
     "studio_tone_mapping",
     "tab",
     "transparent",
-    "zebra_color_scheme",
-    "zebra_count",
-    "zebra_direction",
-    "zebra_mapping_mode",
-    "zebra_opacity",
 ]
 
 CONFIG_WORKSPACE_KEYS = CONFIG_UI_KEYS + [
@@ -209,7 +202,6 @@ CONFIG_WORKSPACE_KEYS = CONFIG_UI_KEYS + [
     "dark",
     "glass",
     "grid_font_size",
-    "orbit_control",
     "states",
     "ticks",
     "tools",
@@ -261,7 +253,6 @@ CONFIG_SET_KEYS = [
     "default_edgecolor",
     "default_opacity",
     "direct_intensity",
-    "explode",
     "glass",
     "grid",
     "metalness",
@@ -305,11 +296,8 @@ DEFAULTS = {
 }
 
 
-def validate_tool_args(explode, analysis_tool):
-    """Shared validation for ``explode`` / ``analysis_tool`` — used by both
-    ``set_viewer_config`` and ``show``. Accepts either ``AnalysisTool`` enum
-    members or their string values. Raises ``ValueError`` on invalid input
-    or on the mutually-exclusive combination."""
+def validate_analysis_tool(analysis_tool):
+    """Validate an analysis tool name or enum member."""
     if isinstance(analysis_tool, AnalysisTool):
         analysis_tool = analysis_tool.value
     if analysis_tool is not None and analysis_tool not in (
@@ -322,12 +310,6 @@ def validate_tool_args(explode, analysis_tool):
             f"analysis_tool must be an AnalysisTool member or one of "
             f'"properties", "distance", "select", "off"; got {analysis_tool!r}'
         )
-    if explode is True and analysis_tool in ("properties", "distance", "select"):
-        raise ValueError(
-            "explode=True and analysis_tool=... are mutually exclusive — "
-            "the viewer disables one when the other activates. "
-            "Pass at most one of them in a single call."
-        )
 
 
 # pylint: disable=too-many-arguments,unused-argument,too-many-locals
@@ -339,7 +321,6 @@ def set_viewer_config(
     ortho=None,
     transparent=None,
     black_edges=None,
-    explode=None,
     zoom=None,
     position=None,
     quaternion=None,
@@ -369,11 +350,6 @@ def set_viewer_config(
     clip_intersection=None,
     clip_planes=None,
     clip_object_colors=None,
-    zebra_count=None,
-    zebra_opacity=None,
-    zebra_direction=None,
-    zebra_color_scheme=None,
-    zebra_mapping_mode=None,
     studio_environment=None,
     studio_env_intensity=None,
     studio_env_rotation=None,
@@ -390,7 +366,7 @@ def set_viewer_config(
     viewer=None,
 ):
     """Set viewer config"""
-    validate_tool_args(explode, analysis_tool)
+    validate_analysis_tool(analysis_tool)
 
     if not is_jupyter_cadquery and port is None:
         port = get_port()
@@ -449,13 +425,11 @@ def set_defaults(
     transparent=None,
     default_opacity=None,
     black_edges=None,
-    orbit_control=None,
     collapse=None,
     ticks=None,
     center_grid=None,
     grid_font_size=None,
     up=None,
-    explode=None,
     analysis_tool=None,
     tab=None,
     zoom=None,
@@ -469,11 +443,6 @@ def set_defaults(
     clip_intersection=None,
     clip_planes=None,
     clip_object_colors=None,
-    zebra_count=None,
-    zebra_opacity=None,
-    zebra_direction=None,
-    zebra_color_scheme=None,
-    zebra_mapping_mode=None,
     pan_speed=None,
     rotate_speed=None,
     zoom_speed=None,
@@ -529,7 +498,6 @@ def set_defaults(
         transparent:        Show objects transparent (default=False)
         default_opacity:    Opacity value for transparent objects (default=0.5)
         black_edges:        Show edges in black color (default=False)
-        orbit_control:      Mouse control use "orbit" control instead of "trackball" control (default=False)
         collapse:           Collapse.LEAVES: collapse all single leaf nodes,
                             Collapse.ROOT: expand root only,
                             Collapse.ALL: collapse all nodes,
@@ -539,17 +507,15 @@ def set_defaults(
         center_grid:        Center the grid at the origin or center of mass (default=False)
         grid_font_size:     Size for the font used for grid axis labels (default=12)
         up:                 Use z-axis ('Z') or y-axis ('Y') as up direction for the camera (default="Z")
-        explode:            Turn on explode mode (default=False)
-        analysis_tool:      Activate one of the analysis tools (mutually exclusive
-                            with explode=True):
+        analysis_tool:      Activate one of the analysis tools:
                             AnalysisTool.PROPERTIES, AnalysisTool.DISTANCE,
                             AnalysisTool.SELECT, AnalysisTool.OFF.
                             String values also accepted ("properties", "distance",
                             "select", "off"). Default=None (no change).
         tab:                Switch the side panel tab:
-                            UiTab.TREE, UiTab.CLIP, UiTab.ZEBRA, UiTab.MATERIAL,
+                            UiTab.TREE, UiTab.CLIP, UiTab.MATERIAL,
                             UiTab.STUDIO. String values also accepted
-                            ("tree", "clip", "zebra", "material", "studio").
+                            ("tree", "clip", "material", "studio").
                             Default=None (no change).
 
         zoom:               Zoom factor of view (default=1.0)
@@ -571,12 +537,6 @@ def set_defaults(
         clip_intersection:  Use clipping intersection mode (default=[False])
         clip_planes:        Show clipping plane helpers (default=False)
         clip_object_colors: Use object color for clipping caps (default=False)
-
-        zebra_count:        Setting of zebra stripe count (default=9, range: 2-50)
-        zebra_opacity:      Setting of zebra opacity (default=1, range: 0-1)
-        zebra_direction:    Setting of zebra direction angle (default=0, range: 0-90)
-        zebra_color_scheme: Zebra color scheme: "blackwhite", "grayscale", or "colorful" (default="blackwhite")
-        zebra_mapping_mode: Zebra mapping mode: "reflection" or "normal" (default="reflection")
 
         studio_environment:      Environment HDR map, use StudioEnvironment enum or a custom HDR URL
                                  (default=StudioEnvironment.PROCEDURAL_STUDIO)
@@ -632,7 +592,7 @@ def set_defaults(
         height:             The viewer height in  Jupyter CadQuery
     """
 
-    validate_tool_args(explode, analysis_tool)
+    validate_analysis_tool(analysis_tool)
 
     kwargs = {k: v for k, v in locals().items() if v is not None}
 
@@ -851,11 +811,5 @@ def check_deprecated(kwargs, _length=1):
                 kwargs["modes"] = [Render.FACES] * _length
 
         del kwargs["render_edges"]
-
-    if kwargs.get("control") is not None:
-        print(
-            "\n'control=\"orbit\" or \"trackball\"' is deprecated, use 'orbit_control=True' or 'False' instead\n"
-        )
-        kwargs["orbit_control"] = kwargs["control"] == "orbit"
 
     return kwargs

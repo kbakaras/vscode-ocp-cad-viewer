@@ -24,7 +24,6 @@ Options:
   --theme TEXT                    Use theme 'light', 'dark', or 'browser'
                                   (default: 'browser')
   --no_tools                      Do not show toolbar
-  --control TEXT                  Use control mode 'orbit' or 'trackball'
   --reset_camera TEXT             Set camera behavior to 'reset', 'keep' or
                                   'center'
   --up TEXT                       Provides up direction, 'Z', 'Y' or 'L'
@@ -49,7 +48,6 @@ Options:
   --transparent                   Show objects transparent
   --default_opacity FLOAT         Default opacity for transparent objects
                                   (default: 0.5)
-  --explode                       Turn explode mode on
   --angular_tolerance FLOAT       Angular tolerance for tessellation algorithm
                                   (default: 0.2)
   --deviation FLOAT               Deviation for tessellation algorithm

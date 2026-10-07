@@ -29,7 +29,6 @@ export function template(styleSrc: vscode.Uri, scriptSrc: vscode.Uri, htmlSrc: v
         theme = "dark";
     }
     const treeWidth = options.get("tree_width");
-    const control = options.get("orbit_control") ? "orbit" : "trackball";
     const up = options.get("up");
     const glass = options.get("glass");
     const tools = options.get("tools");
@@ -44,7 +43,6 @@ export function template(styleSrc: vscode.Uri, scriptSrc: vscode.Uri, htmlSrc: v
     html = html.replace("{{ scriptSrc }}", scriptSrc.toString());
     html = html.replace("{{ theme }}", theme);
     html = html.replace("{{ treeWidth }}", `${treeWidth}`);
-    html = html.replace("{{ control }}", control);
     html = html.replace("{{ up }}", `${up}`);
     html = html.replace(/\{\{ glass\|tojson \}\}/g, `${glass}`);
     html = html.replace(/\{\{ tools\|tojson \}\}/g, `${tools}`);

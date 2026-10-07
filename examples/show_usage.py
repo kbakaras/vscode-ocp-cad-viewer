@@ -29,7 +29,7 @@ show(b, c, tools=False)
 show(b, c, tools=True, glass=True)
 
 # %%
-show(b, c, orbit_control=True)
+show(b, c)
 
 # %%
 import cadquery as cq
@@ -332,60 +332,6 @@ reset_defaults()
 show(b, c)
 
 # %%
-# Show zebra stripes with blackwhite color scheme and reflection mapping
-
-show(
-    b,
-    c,
-    zebra_count=20,
-    zebra_opacity=0.8,
-    zebra_direction=45,
-    zebra_color_scheme="blackwhite",
-    zebra_mapping_mode="reflection",
-)
-set_viewer_config(tab="zebra")
-
-# %%
-# Show zebra stripes with colorful color scheme and normal mapping
-
-show(
-    b,
-    c,
-    zebra_count=35,
-    zebra_opacity=1.0,
-    zebra_direction=0,
-    zebra_color_scheme="colorful",
-    zebra_mapping_mode="normal",
-)
-set_viewer_config(tab="zebra")
-
-# %%
-# Show zebra stripes with grayscale color scheme
-
-show(
-    b,
-    c,
-    zebra_count=10,
-    zebra_opacity=0.5,
-    zebra_direction=90,
-    zebra_color_scheme="grayscale",
-    zebra_mapping_mode="reflection",
-)
-set_viewer_config(tab="zebra")
-
-# %%
-# Set zebra defaults
-
-reset_defaults()
-
-set_defaults(
-    zebra_count=25,
-    zebra_opacity=0.7,
-    zebra_direction=30,
-    zebra_color_scheme="blackwhite",
-    zebra_mapping_mode="reflection",
-)
-set_viewer_config(tab="zebra")
 # %%
 
 show(b, c)

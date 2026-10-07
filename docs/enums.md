@@ -52,8 +52,6 @@ Active analysis tool — see [measure.md](measure.md).
 | `AnalysisTool.SELECT`      | Object selection — see [selector.md](selector.md) |
 | `AnalysisTool.OFF`         | No analysis tool                    |
 
-Mutually exclusive with `explode=True`.
-
 ## `UiTab`
 
 Side-panel tab selection — used by `set_viewer_config(tab=...)` and the `tab=` keyword on every `show*` command.
@@ -62,7 +60,6 @@ Side-panel tab selection — used by `set_viewer_config(tab=...)` and the `tab=`
 | ------------------ | ---------- |
 | `UiTab.TREE`       | Object tree |
 | `UiTab.CLIP`       | Clipping   |
-| `UiTab.ZEBRA`      | Zebra      |
 | `UiTab.MATERIAL`   | Material   |
 | `UiTab.STUDIO`     | Studio     |
 

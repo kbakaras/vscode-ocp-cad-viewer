@@ -12,7 +12,6 @@ DEFAULTS = {
     "no_tools": False,
     "tree_width": 240,
     "theme": "browser",
-    "control": "trackball",
     "modifier_keys": {
         "shift": "shiftKey",
         "ctrl": "ctrlKey",
@@ -38,7 +37,6 @@ DEFAULTS = {
     "center_grid": False,
     "grid_font_size": 12,
     "default_opacity": 0.5,
-    "explode": False,
     "default_edgecolor": "#707070",
     "default_color": "#e8b024",
     "default_thickedgecolor": "MediumOrchid",

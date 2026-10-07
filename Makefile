@@ -31,8 +31,7 @@ endif
 
 dist: clean
 	@echo Version: $(CURRENT_VERSION)
-	@echo "Copying html, css and js file to standalone locations"
-	@cp resources/viewer.html ocp_vscode/templates
+	@echo "Copying css and js files to standalone locations"
 	@cp node_modules/three-cad-viewer/dist/three-cad-viewer.esm.js ocp_vscode/static/js
 	@cp node_modules/three-cad-viewer/dist/three-cad-viewer.css ocp_vscode/static/css
 	@cp src/logo.ts ocp_vscode/static/js/logo.js

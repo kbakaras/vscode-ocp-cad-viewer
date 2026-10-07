@@ -84,7 +84,7 @@ show(
 
 # %%
 
-show(b, c, orbit_control=True)
+show(b, c)
 
 
 # %%
@@ -194,47 +194,6 @@ show(
     clip_object_colors=False,
 )
 set_viewer_config(tab="clip")
-
-# %%
-
-show(
-    b,
-    c,
-    zebra_count=20,
-    zebra_opacity=0.7,
-    zebra_direction=45,
-    zebra_color_scheme="blackwhite",
-    zebra_mapping_mode="reflection",
-    reset_camera=Camera.RESET,
-)
-set_viewer_config(tab="zebra")
-
-# %%
-
-show(
-    b,
-    c,
-    zebra_count=35,
-    zebra_opacity=1.0,
-    zebra_direction=0,
-    zebra_color_scheme="colorful",
-    zebra_mapping_mode="normal",
-    debug=True,
-)
-set_viewer_config(tab="zebra")
-
-# %%
-
-show(
-    b,
-    c,
-    zebra_count=10,
-    zebra_opacity=0.5,
-    zebra_direction=90,
-    zebra_color_scheme="grayscale",
-    zebra_mapping_mode="reflection",
-)
-set_viewer_config(tab="zebra")
 
 # %%
 

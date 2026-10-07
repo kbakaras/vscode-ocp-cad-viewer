@@ -286,12 +286,6 @@
           "description": "Select color theme (default: browser)",
           "order": 3
         },
-        "OcpCadViewer.view.orbit_control": {
-          "type": "boolean",
-          "default": false,
-          "description": "Use 'orbit' control mode instead of 'trackball' (default: false)",
-          "order": 4
-        },
         "OcpCadViewer.view.up": {
           "type": "string",
           "enum": [
@@ -398,12 +392,6 @@
           "default": 0.5,
           "description": "Default opacity for transparent objects (default: 0.5)",
           "order": 31
-        },
-        "OcpCadViewer.view.explode": {
-          "type": "boolean",
-          "default": false,
-          "description": "Turn explode mode on (default: false)",
-          "order": 32
         },
         "OcpCadViewer.view.reset_camera": {
           "type": "string",

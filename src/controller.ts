@@ -88,7 +88,6 @@ export class OCPCADController {
         let c: Record<string, any> = {
             theme: theme,
             tree_width: options.get("tree_width"),
-            control: options.get("orbit_control") ? "orbit" : "trackball",
             up: options.get("up"),
             glass: options.get("glass"),
             new_tree_behavior: options.get("new_tree_behavior"),
@@ -108,7 +107,6 @@ export class OCPCADController {
             default_opacity: options.get("default_opacity"),
             reset_camera: options.get("reset_camera"),
             transparent: options.get("transparent"),
-            explode: options.get("explode"),
             modifier_keys: options.get("modifier_keys")
         };
         options = vscode.workspace.getConfiguration("OcpCadViewer.render");

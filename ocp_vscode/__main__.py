@@ -129,13 +129,6 @@ def track_param(ctx, param, value):
     callback=track_param,
 )
 @click.option(
-    "--control",
-    type=click.STRING,
-    default=None,
-    help=f"Use control mode 'orbit' or 'trackball' (default: {DEFAULTS['control']!r})",
-    callback=track_param,
-)
-@click.option(
     "--reset_camera",
     type=click.STRING,
     default=None,
@@ -254,12 +247,6 @@ def track_param(ctx, param, value):
     type=click.FLOAT,
     default=None,
     help=f"Default opacity for transparent objects (default: {DEFAULTS['default_opacity']})",
-    callback=track_param,
-)
-@click.option(
-    "--explode",
-    is_flag=True,
-    help="Turn explode mode on",
     callback=track_param,
 )
 @click.option(

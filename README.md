@@ -168,7 +168,6 @@ The "Library Manager" in the _OCP CAD Viewer_ sidebar lets you install or upgrad
 #### Python API reference
 
 - [Additional Python API](docs/api.md) (`save_screenshot`, `status`, `set_port`, …)
-- [Animation](docs/animation.md)
 - [Color maps](docs/colormaps.md)
 - [Enums reference](docs/enums.md) (`Camera`, `Collapse`, `Render`, `AnalysisTool`, `UiTab`, `Studio*`)
 
@@ -209,7 +208,7 @@ make tests
 - Reuse the viewer component across show commands (clear instead of restart), allowing to keep active tab smoothly
 - Properties tool now also shows diameter of circle and ellipse [three-cad-viewer #39](https://github.com/bernhard-42/three-cad-viewer/issues/39)
 - The `analysis_tool` parameter allows to activate a specific analysis tool (`AnalysisTool.PROPERTIES`, `AnalysisTool.DISTANCE`, `AnalysisTool.SELECT`). It is consistently available with all `show` commands and `set_viewer_config`. [#219](https://github.com/bernhard-42/vscode-ocp-cad-viewer/issues/219)
-- The `tab` parameter allows to activate a specific UI tab (`UiTab.TREE`, `UiTab.CLIP`, `UiTab.ZEBRA`, `UiTab.Material`, `UiTab.STUDIO`). It is consistently available with all `show` commands and `set_viewer_config`.
+- The `tab` parameter allows to activate a specific UI tab (`UiTab.TREE`, `UiTab.CLIP`, `UiTab.MATERIAL`, `UiTab.STUDIO`). It is consistently available with all `show` commands and `set_viewer_config`.
 - `ShapeList`s are now expanded like normal lists to not hide the internal structure [#220](https://github.com/bernhard-42/vscode-ocp-cad-viewer/issues/220)
 - Adapt material support to latest changes in build123d
 - Rework and significant enhancement of the docs

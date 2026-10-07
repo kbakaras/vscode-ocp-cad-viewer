@@ -203,26 +203,6 @@ class TestProjection:
 
 
 # ---------------------------------------------------------------------------
-# Tests — Explode
-# ---------------------------------------------------------------------------
-
-
-class TestExplode:
-    def test_explode_on(self, assembly):
-        show(assembly, reset_camera=Camera.RESET)
-        c = dict(explode=True)
-        set_viewer_config(**c)
-        assert_config(c)
-
-    def test_explode_off(self, assembly):
-        show(assembly, reset_camera=Camera.RESET)
-        set_viewer_config(explode=True)
-        c = dict(explode=False)
-        set_viewer_config(**c)
-        assert_config(c)
-
-
-# ---------------------------------------------------------------------------
 # Tests — Camera Position
 # ---------------------------------------------------------------------------
 
@@ -397,51 +377,6 @@ class TestClipping:
             clip_intersection=False,
             clip_planes=True,
             clip_object_colors=False,
-        )
-        set_viewer_config(**c)
-        assert_config(c)
-
-
-# ---------------------------------------------------------------------------
-# Tests — Zebra
-# ---------------------------------------------------------------------------
-
-
-class TestZebra:
-    def test_zebra_blackwhite_reflection(self, assembly):
-        show(assembly, reset_camera=Camera.RESET)
-        set_viewer_config(tab="zebra")
-        c = dict(
-            zebra_count=25,
-            zebra_opacity=0.8,
-            zebra_direction=45,
-            zebra_color_scheme="blackwhite",
-            zebra_mapping_mode="reflection",
-        )
-        set_viewer_config(**c)
-        assert_config(c)
-
-    def test_zebra_colorful_normal(self, assembly):
-        show(assembly, reset_camera=Camera.RESET)
-        set_viewer_config(tab="zebra")
-        c = dict(
-            zebra_count=10,
-            zebra_opacity=0.5,
-            zebra_direction=30,
-            zebra_color_scheme="colorful",
-            zebra_mapping_mode="normal",
-        )
-        set_viewer_config(**c)
-        assert_config(c)
-
-    def test_zebra_grayscale_max(self, assembly):
-        show(assembly, reset_camera=Camera.RESET)
-        c = dict(
-            zebra_count=50,
-            zebra_opacity=1.0,
-            zebra_direction=90,
-            zebra_color_scheme="grayscale",
-            zebra_mapping_mode="reflection",
         )
         set_viewer_config(**c)
         assert_config(c)

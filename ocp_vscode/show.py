@@ -83,7 +83,6 @@ from ocp_vscode.utils import (
     check_camera_warnings,
     camera_keep_warning,
     set_last_bbox_size,
-    set_last_paths,
 )
 from ocp_vscode.config import (
     Camera,
@@ -94,7 +93,7 @@ from ocp_vscode.config import (
     get_changed_config,
     get_defaults,
     preset,
-    validate_tool_args,
+    validate_analysis_tool,
 )
 
 __all__ = [
@@ -302,23 +301,6 @@ def _tessellate(
 
         conf.update(clip_defaults)
 
-        # Reset zebra parameters when reset_camera is RESET
-        zebra_defaults = {
-            k: v for k, v in get_defaults().items() if k.startswith("zebra")
-        }
-        if conf.get("zebra_count") is not None:
-            del conf["zebra_count"]
-        if conf.get("zebra_opacity") is not None:
-            del conf["zebra_opacity"]
-        if conf.get("zebra_direction") is not None:
-            del conf["zebra_direction"]
-        if conf.get("zebra_color_scheme") is not None:
-            del conf["zebra_color_scheme"]
-        if conf.get("zebra_mapping_mode") is not None:
-            del conf["zebra_mapping_mode"]
-
-        conf.update(zebra_defaults)
-
     if kwargs.get("helper_scale") is not None:
         conf["helper_scale"] = kwargs["helper_scale"]
 
@@ -380,7 +362,6 @@ def _tessellate(
             debug=kwargs.get("debug", False),
         )
 
-    set_last_paths(part_group)
 
     extracted_materials = _extract_material_objects(part_group)
 
@@ -448,8 +429,6 @@ def _tessellate(
 
     metadata = source_metadata(cad_objs, names, part_group.name)
     if exact:
-        if params.get("orbit_control") is not None:
-            params["control"] = "orbit" if params["orbit_control"] else "trackball"
         packet = encode_scene(part_group, instances, params,
                               metadata, extracted_materials)
         packet["client_prepare_ms"] = (time.perf_counter() - started) * 1000
@@ -544,14 +523,10 @@ def _convert(
 
     if config.get("dark") is not None:
         config["theme"] = "dark"
-    elif config.get("orbit_control") is not None:
-        config["control"] = "orbit" if config["orbit_control"] else "trackball"
 
     if config.get("debug") is not None and config["debug"]:
         print("\nconfig:\n", config)
 
-    if kwargs.get("explode") is not None:
-        config["explode"] = kwargs["explode"]
     if kwargs.get("analysis_tool") is not None:
         val = kwargs["analysis_tool"]
         config["analysis_tool"] = val.value if isinstance(val, Enum) else val
@@ -630,10 +605,7 @@ def show(
     transparent=None,
     default_opacity=None,
     black_edges=None,
-    orbit_control=None,
-    control=None,
     collapse=None,
-    explode=None,
     analysis_tool=None,
     tab=None,
     ticks=None,
@@ -654,11 +626,6 @@ def show(
     clip_intersection=None,
     clip_planes=None,
     clip_object_colors=None,
-    zebra_count=None,
-    zebra_opacity=None,
-    zebra_direction=None,
-    zebra_color_scheme=None,
-    zebra_mapping_mode=None,
     pan_speed=None,
     rotate_speed=None,
     zoom_speed=None,
@@ -733,7 +700,6 @@ def show(
         transparent:             Show objects transparent (default=False)
         default_opacity:         Opacity value for transparent objects (default=0.5)
         black_edges:             Show edges in black color (default=False)
-        orbit_control:           Mouse control use "orbit" control instead of "trackball" control (default=False)
         collapse:                Collapse.LEAVES: collapse all single leaf nodes,
                                  Collapse.ROOT: expand root only,
                                  Collapse.ALL: collapse all nodes,
@@ -743,17 +709,15 @@ def show(
         center_grid:             Center the grid at the origin or center of mass (default=False)
         grid_font_size:          Size for the font used for grid axis labels (default=12)
         up:                      Use z-axis ('Z') or y-axis ('Y') as up direction for the camera (default="Z")
-        explode:                 Turn on explode mode (default=False)
-        analysis_tool:           Activate one of the analysis tools (mutually exclusive
-                                 with explode=True):
+        analysis_tool:           Activate one of the analysis tools:
                                  AnalysisTool.PROPERTIES, AnalysisTool.DISTANCE,
                                  AnalysisTool.SELECT, AnalysisTool.OFF.
                                  String values also accepted ("properties", "distance",
                                  "select", "off"). Default=None (no change).
         tab:                     Switch the side panel tab:
-                                 UiTab.TREE, UiTab.CLIP, UiTab.ZEBRA, UiTab.MATERIAL,
+                                 UiTab.TREE, UiTab.CLIP, UiTab.MATERIAL,
                                  UiTab.STUDIO. String values also accepted
-                                 ("tree", "clip", "zebra", "material", "studio").
+                                 ("tree", "clip", "material", "studio").
                                  Default=None (no change).
 
         zoom:                    Zoom factor of view (default=1.0)
@@ -777,11 +741,6 @@ def show(
         clip_planes:             Show clipping plane helpers (default=False)
         clip_object_colors:      Use object color for clipping caps (default=False)
 
-        zebra_count:             Setting of zebra stripe count (default=9, range: 2-50)
-        zebra_opacity:           Setting of zebra opacity (default=1, range: 0-1)
-        zebra_direction:         Setting of zebra direction angle (default=0, range: 0-90)
-        zebra_color_scheme:      Zebra color scheme: "blackwhite", "grayscale", or "colorful" (default="blackwhite")
-        zebra_mapping_mode:      Zebra mapping mode: "reflection" or "normal" (default="reflection")
 
         studio_environment:      Environment HDR map, use StudioEnvironment enum or a custom HDR URL
                                  (default=StudioEnvironment.PROCEDURAL_STUDIO)
@@ -831,7 +790,7 @@ def show(
         timeit:                  Show timing information from level 0-3 (default=False)
     """
 
-    validate_tool_args(explode, analysis_tool)
+    validate_analysis_tool(analysis_tool)
     return _show(*cad_objs, **none_filter(locals(), ["cad_objs"]))
 
 
@@ -1009,9 +968,7 @@ def show_object(
     transparent=None,
     default_opacity=None,
     black_edges=None,
-    orbit_control=None,
     collapse=None,
-    explode=None,
     analysis_tool=None,
     tab=None,
     ticks=None,
@@ -1032,11 +989,6 @@ def show_object(
     clip_intersection=None,
     clip_planes=None,
     clip_object_colors=None,
-    zebra_count=None,
-    zebra_opacity=None,
-    zebra_direction=None,
-    zebra_color_scheme=None,
-    zebra_mapping_mode=None,
     pan_speed=None,
     rotate_speed=None,
     zoom_speed=None,
@@ -1116,7 +1068,6 @@ def show_object(
         transparent:             Show objects transparent (default=False)
         default_opacity:         Opacity value for transparent objects (default=0.5)
         black_edges:             Show edges in black color (default=False)
-        orbit_control:           Mouse control use "orbit" control instead of "trackball" control (default=False)
         collapse:                Collapse.LEAVES: collapse all single leaf nodes,
                                  Collapse.ROOT: expand root only,
                                  Collapse.ALL: collapse all nodes,
@@ -1126,17 +1077,15 @@ def show_object(
         center_grid:             Center the grid at the origin or center of mass (default=False)
         grid_font_size:          Size for the font used for grid axis labels (default=12)
         up:                      Use z-axis ('Z') or y-axis ('Y') as up direction for the camera (default="Z")
-        explode:                 Turn on explode mode (default=False)
-        analysis_tool:           Activate one of the analysis tools (mutually exclusive
-                                 with explode=True):
+        analysis_tool:           Activate one of the analysis tools:
                                  AnalysisTool.PROPERTIES, AnalysisTool.DISTANCE,
                                  AnalysisTool.SELECT, AnalysisTool.OFF.
                                  String values also accepted ("properties", "distance",
                                  "select", "off"). Default=None (no change).
         tab:                     Switch the side panel tab:
-                                 UiTab.TREE, UiTab.CLIP, UiTab.ZEBRA, UiTab.MATERIAL,
+                                 UiTab.TREE, UiTab.CLIP, UiTab.MATERIAL,
                                  UiTab.STUDIO. String values also accepted
-                                 ("tree", "clip", "zebra", "material", "studio").
+                                 ("tree", "clip", "material", "studio").
                                  Default=None (no change).
 
         zoom:                    Zoom factor of view (default=1.0)
@@ -1160,11 +1109,6 @@ def show_object(
         clip_planes:             Show clipping plane helpers (default=False)
         clip_object_colors:      Use object color for clipping caps (default=False)
 
-        zebra_count:             Setting of zebra stripe count (default=9, range: 2-50)
-        zebra_opacity:           Setting of zebra opacity (default=1, range: 0-1)
-        zebra_direction:         Setting of zebra direction angle (default=0, range: 0-90)
-        zebra_color_scheme:      Zebra color scheme: "blackwhite", "grayscale", or "colorful" (default="blackwhite")
-        zebra_mapping_mode:      Zebra mapping mode: "reflection" or "normal" (default="reflection")
 
         studio_environment:      Environment HDR map, use StudioEnvironment enum or a custom HDR URL
                                  (default=StudioEnvironment.PROCEDURAL_STUDIO)
@@ -1214,7 +1158,7 @@ def show_object(
         debug:                   Show debug statements to the VS Code browser console (default=False)
         timeit:                  Show timing information from level 0-3 (default=False)
     """
-    validate_tool_args(explode, analysis_tool)
+    validate_analysis_tool(analysis_tool)
     return _show_object(obj, **none_filter(locals(), ["obj"]))
 
 
@@ -1398,9 +1342,7 @@ def show_objects(
     transparent=None,
     default_opacity=None,
     black_edges=None,
-    orbit_control=None,
     collapse=None,
-    explode=None,
     analysis_tool=None,
     tab=None,
     ticks=None,
@@ -1421,11 +1363,6 @@ def show_objects(
     clip_intersection=None,
     clip_planes=None,
     clip_object_colors=None,
-    zebra_count=None,
-    zebra_opacity=None,
-    zebra_direction=None,
-    zebra_color_scheme=None,
-    zebra_mapping_mode=None,
     pan_speed=None,
     rotate_speed=None,
     zoom_speed=None,
@@ -1488,7 +1425,6 @@ def show_objects(
         transparent:             Show objects transparent (default=False)
         default_opacity:         Opacity value for transparent objects (default=0.5)
         black_edges:             Show edges in black color (default=False)
-        orbit_control:           Mouse control use "orbit" control instead of "trackball" control (default=False)
         collapse:                Collapse.LEAVES: collapse all single leaf nodes,
                                  Collapse.ROOT: expand root only,
                                  Collapse.ALL: collapse all nodes,
@@ -1498,17 +1434,15 @@ def show_objects(
         center_grid:             Center the grid at the origin or center of mass (default=False)
         grid_font_size:          Size for the font used for grid axis labels (default=12)
         up:                      Use z-axis ('Z') or y-axis ('Y') as up direction for the camera (default="Z")
-        explode:                 Turn on explode mode (default=False)
-        analysis_tool:           Activate one of the analysis tools (mutually exclusive
-                                 with explode=True):
+        analysis_tool:           Activate one of the analysis tools:
                                  AnalysisTool.PROPERTIES, AnalysisTool.DISTANCE,
                                  AnalysisTool.SELECT, AnalysisTool.OFF.
                                  String values also accepted ("properties", "distance",
                                  "select", "off"). Default=None (no change).
         tab:                     Switch the side panel tab:
-                                 UiTab.TREE, UiTab.CLIP, UiTab.ZEBRA, UiTab.MATERIAL,
+                                 UiTab.TREE, UiTab.CLIP, UiTab.MATERIAL,
                                  UiTab.STUDIO. String values also accepted
-                                 ("tree", "clip", "zebra", "material", "studio").
+                                 ("tree", "clip", "material", "studio").
                                  Default=None (no change).
 
         zoom:                    Zoom factor of view (default=1.0)
@@ -1532,11 +1466,6 @@ def show_objects(
         clip_planes:             Show clipping plane helpers (default=False)
         clip_object_colors:      Use object color for clipping caps (default=False)
 
-        zebra_count:             Setting of zebra stripe count (default=9, range: 2-50)
-        zebra_opacity:           Setting of zebra opacity (default=1, range: 0-1)
-        zebra_direction:         Setting of zebra direction angle (default=0, range: 0-90)
-        zebra_color_scheme:      Zebra color scheme: "blackwhite", "grayscale", or "colorful" (default="blackwhite")
-        zebra_mapping_mode:      Zebra mapping mode: "reflection" or "normal" (default="reflection")
 
         studio_environment:      Environment HDR map, use StudioEnvironment enum or a custom HDR URL
                                  (default=StudioEnvironment.PROCEDURAL_STUDIO)
@@ -1586,7 +1515,7 @@ def show_objects(
         debug:                   Show debug statements to the VS Code browser console (default=False)
         timeit:                  Show timing information from level 0-3 (default=False)
     """
-    validate_tool_args(explode, analysis_tool)
+    validate_analysis_tool(analysis_tool)
     kwargs = none_filter(locals())
     # Use per-object modes stored in OBJECTS
     stored_modes = OBJECTS["modes"]

@@ -30,9 +30,7 @@ Keywords
                                     Collapse.ROOT: expand root only,
                                     Collapse.ALL: collapse all nodes,
                                     Collapse.NONE: expand all nodes
-    explode:                 (boolean) Turn on explode mode
-    analysis_tool:           (AnalysisTool or string) Activate an analysis tool
-                                     (mutually exclusive with explode=True):
+    analysis_tool:           (AnalysisTool or string) Activate an analysis tool:
                                      AnalysisTool.PROPERTIES, AnalysisTool.DISTANCE,
                                      AnalysisTool.SELECT, AnalysisTool.OFF
                                      (or "properties", "distance", "select", "off")
@@ -50,8 +48,8 @@ Keywords
                                 `[1,1], [0,1]` (first element of the tuple) toggles faces
                                 `[1,1], [1,0]` (second element of the tuple) toggles edges
     tab:                     (string/UiTab) Select a tab in the viewer:
-                                     "tree" | "clip" | "zebra" | "material" | "studio"
-                                     (or use UiTab.TREE, UiTab.CLIP, UiTab.ZEBRA,
+                                     "tree" | "clip" | "material" | "studio"
+                                     (or use UiTab.TREE, UiTab.CLIP,
                                      UiTab.MATERIAL, UiTab.STUDIO)
 
     clip_slider_0:           (float) Set clipping slider 0 to a value

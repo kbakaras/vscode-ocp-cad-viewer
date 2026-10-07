@@ -265,7 +265,11 @@ class Viewer:
             with open(config_file, "r") as f:
                 defaults = yaml.safe_load(f)
                 for k, v in defaults.items():
-                    local_config[k] = v
+                    if k not in {
+                        "control", "explode", "zebra_count", "zebra_opacity",
+                        "zebra_direction", "zebra_color_scheme", "zebra_mapping_mode",
+                    }:
+                        local_config[k] = v
 
         local_config = dict(sorted(local_config.items()))
 

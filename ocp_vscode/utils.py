@@ -18,7 +18,6 @@
 import math
 import warnings
 
-from ocp_tessellate import OcpGroup
 
 __all__ = [
     "ignore_camera_warnings",
@@ -143,35 +142,6 @@ def check_camera_warnings(new_bb):
         camera_warning(
             "Object may be outside visible area (no overlap with previous view). Skip warnings with `ignore_camera_warnings()`"
         )
-
-
-# Save last paths for Animation
-
-LAST_PATHS = []
-
-
-def set_last_paths(node):
-    """Extract all paths from nested OcpGroup/OcpObject structure."""
-    global LAST_PATHS
-
-    def collect_paths(node, path):
-        results = []
-        current_path = f"{path}/{node.name}"
-
-        if isinstance(node, OcpGroup):
-            results.append(current_path)
-            for obj in node.objects:
-                results.extend(collect_paths(obj, current_path))
-        else:  # OcpObject
-            results.append(current_path)
-
-        return results
-
-    LAST_PATHS = collect_paths(node, "")
-
-
-def get_last_paths():
-    return LAST_PATHS
 
 
 # To avoid dependency to py-materials

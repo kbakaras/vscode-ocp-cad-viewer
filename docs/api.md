@@ -6,7 +6,7 @@ Functions exported from `ocp_vscode` that aren't covered by the dedicated `show*
 
 - `save_screenshot(filename, port=None, polling=True, progress_only=False)`
 
-    Save the current viewer view to a PNG. `filename` is taken relative to the current working directory unless it's absolute. With `polling=True` the call returns only after the file has been written; this is what `Animation.save_as_gif` relies on internally.
+    Save the current viewer view to a PNG. `filename` is taken relative to the current working directory unless it's absolute. With `polling=True` the call returns only after the file has been written.
 
 ## Object stack management
 

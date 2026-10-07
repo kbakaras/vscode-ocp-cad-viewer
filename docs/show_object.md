@@ -50,7 +50,6 @@ Valid keywords to configure the viewer (**kwargs):
     transparent:             Show objects transparent (default=False)
     default_opacity:         Opacity value for transparent objects (default=0.5)
     black_edges:             Show edges in black color (default=False)
-    orbit_control:           Mouse control use "orbit" control instead of "trackball" control (default=False)
     collapse:                Collapse.LEAVES: collapse all single leaf nodes,
                                 Collapse.ROOT: expand root only,
                                 Collapse.ALL: collapse all nodes,
@@ -82,11 +81,6 @@ Valid keywords to configure the viewer (**kwargs):
     clip_planes:             Show clipping plane helpers (default=False)
     clip_object_colors:      Use object color for clipping caps (default=False)
 
-    zebra_count:             Setting of zebra stripe count (default=9, range: 2-50)
-    zebra_opacity:           Setting of zebra opacity (default=1, range: 0-1)
-    zebra_direction:         Setting of zebra direction angle (default=0, range: 0-90)
-    zebra_color_scheme:      Zebra color scheme: "blackwhite", "grayscale", or "colorful" (default="blackwhite")
-    zebra_mapping_mode:      Zebra mapping mode: "reflection" or "normal" (default="reflection")
 
     studio_environment:      Environment HDR map, use StudioEnvironment enum or a custom HDR URL
                                 (default=StudioEnvironment.PROCEDURAL_STUDIO)
