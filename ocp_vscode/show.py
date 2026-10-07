@@ -560,10 +560,10 @@ class Progress:
             print(mark, end="", flush=True)
 
 
-def align_attrs(attr_list, length, default, tag, explode=True):
+def align_attrs(attr_list, length, default, tag):
     """Align attributes to the length of the cad_objs"""
     if attr_list is None:
-        return [None] * length if explode else None
+        return [None] * length
     elif len(attr_list) < length:
         print(f"Too few {tag}, using defaults to fill")
         return list(attr_list) + [default] * (length - len(attr_list))

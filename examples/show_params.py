@@ -98,11 +98,7 @@ show(d, collapse=Collapse.ALL)
 
 # %%
 
-show(b, c, explode=True)
-
-# %%
-
-show(b, c, up="Y", explode=False)
+show(b, c, up="Y")
 
 # %%
 

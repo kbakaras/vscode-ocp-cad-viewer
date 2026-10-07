@@ -13,14 +13,45 @@ import time
 
 import pytest
 
+import ocp_vscode.standalone as standalone_module
 from ocp_vscode import set_port, workspace_config
 from ocp_vscode.comms import port_check
 from ocp_vscode.state import del_port
+from ocp_vscode.standalone import Viewer
 
 
 # Use a port that is unlikely to clash with a running dev viewer.
 STANDALONE_PORT = 39777
 STARTUP_TIMEOUT = 20.0  # seconds
+
+
+def test_standalone_config_accepts_supported_key(tmp_path, monkeypatch):
+    config_file = tmp_path / ".ocpvscode_standalone"
+    config_file.write_text("theme: dark\n", encoding="utf-8")
+    monkeypatch.setattr(standalone_module, "CONFIG_FILE", config_file)
+
+    viewer = Viewer.__new__(Viewer)
+    viewer.config = {}
+    viewer.last_config = {}
+    viewer.debug = False
+    viewer.configure({})
+
+    assert viewer.config["theme"] == "dark"
+
+
+@pytest.mark.parametrize("key", ["control", "unknown_setting"])
+def test_standalone_config_rejects_unknown_key(tmp_path, monkeypatch, key):
+    config_file = tmp_path / ".ocpvscode_standalone"
+    config_file.write_text(f"{key}: orbit\n", encoding="utf-8")
+    monkeypatch.setattr(standalone_module, "CONFIG_FILE", config_file)
+
+    viewer = Viewer.__new__(Viewer)
+    viewer.config = {}
+    viewer.last_config = {}
+    viewer.debug = False
+
+    with pytest.raises(ValueError, match=f"Unknown setting.*{config_file}.*{key}"):
+        viewer.configure({})
 
 
 @pytest.fixture(autouse=True)

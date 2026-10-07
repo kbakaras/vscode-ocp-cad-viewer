@@ -24,8 +24,6 @@ set_viewer_config(analysis_tool=AnalysisTool.DISTANCE)
 
 Allowed values: `AnalysisTool.PROPERTIES`, `AnalysisTool.DISTANCE`, `AnalysisTool.SELECT`, `AnalysisTool.OFF`. The string equivalents `"properties"`, `"distance"`, `"select"`, `"off"` also work.
 
-`analysis_tool` is mutually exclusive with `explode=True`.
-
 ## Topology Filter
 
 For easier selection, there is a **topology filter**

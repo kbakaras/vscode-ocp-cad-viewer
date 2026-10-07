@@ -139,7 +139,7 @@ Valid keywords to configure the viewer (**kwargs):
 
     ![](../screenshots/glass-collapsed.png)
 
-    Other valid parameters are "1" (collapse leafs) and "E" (explode tree)
+    Other valid parameters are "1" (collapse leaves) and "E" (expand tree)
 
 - Names, colors and alpha values
 

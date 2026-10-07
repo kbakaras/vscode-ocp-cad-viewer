@@ -83,7 +83,7 @@ To avoid passing the same flags every time, write a config file with the built-i
 python -m ocp_vscode --create_configfile
 ```
 
-This writes `~/.ocpvscode_standalone` (YAML). Edit it to set your preferences (theme, tree width, axes, grids, mouse speeds, …); the standalone server merges it on top of the built-in defaults at startup, and CLI flags still override the file. See [config_files.md](config_files.md) for the full precedence rules and the list of honored keys.
+This writes `~/.ocpvscode_standalone` (YAML). Edit it to set your preferences (theme, tree width, axes, grids, mouse speeds, …); the standalone server merges it on top of the built-in defaults at startup, and CLI flags still override the file. Unknown keys cause a startup error. See [config_files.md](config_files.md) for the full precedence rules and the list of accepted keys.
 
 ## Standalone mode with Docker
 

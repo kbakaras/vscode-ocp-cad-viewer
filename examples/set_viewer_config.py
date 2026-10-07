@@ -188,32 +188,6 @@ check(c)
 
 # %%
 
-state("explode")
-
-# %%
-c = dict(explode=True)
-set_viewer_config(**c)
-
-# %%
-
-state(*c.keys())
-check(c)
-
-# %%
-
-state("explode")
-
-# %%
-c = dict(explode=False)
-set_viewer_config(**c)
-
-# %%
-
-state(*c.keys())
-check(c)
-
-# %%
-
 state("position", "quaternion", "target", "zoom")
 
 # %%

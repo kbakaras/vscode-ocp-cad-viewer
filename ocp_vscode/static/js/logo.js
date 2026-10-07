@@ -219,7 +219,6 @@ export const logo = () => {
             default_vertexcolor: "MediumOrchid",
             deviation: 0.1,
             direct_intensity: 1.1,
-            explode: false,
             glass: true,
             grid: [true, false, false],
             helper_scale: 1.0,

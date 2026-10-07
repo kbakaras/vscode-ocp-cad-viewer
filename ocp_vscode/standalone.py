@@ -263,13 +263,15 @@ class Viewer:
         config_file = CONFIG_FILE
         if config_file.exists():
             with open(config_file, "r") as f:
-                defaults = yaml.safe_load(f)
-                for k, v in defaults.items():
-                    if k not in {
-                        "control", "explode", "zebra_count", "zebra_opacity",
-                        "zebra_direction", "zebra_color_scheme", "zebra_mapping_mode",
-                    }:
-                        local_config[k] = v
+                defaults = yaml.safe_load(f) or {}
+            if not isinstance(defaults, dict):
+                raise ValueError(f"Expected a YAML mapping in {config_file}")
+            unknown = defaults.keys() - DEFAULTS.keys()
+            if unknown:
+                raise ValueError(
+                    f"Unknown setting(s) in {config_file}: {', '.join(sorted(unknown))}"
+                )
+            local_config.update(defaults)
 
         local_config = dict(sorted(local_config.items()))
 

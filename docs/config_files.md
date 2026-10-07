@@ -33,7 +33,7 @@ Stores default values for the standalone server flags (theme, tree width, axes, 
 
 Precedence (lowest to highest):
 
-1. Built-in defaults compiled into `ocp_vscode/standalone.py`
+1. Built-in defaults defined in `ocp_vscode/standalone_defaults.py`
 2. `~/.ocpvscode_standalone` (if present)
 3. CLI flags passed to `python -m ocp_vscode`
 
@@ -56,6 +56,6 @@ rotate_speed: 1.0
 zoom_speed: 0.5
 ```
 
-Only keys that exist in the built-in defaults are honored; everything else is ignored. Delete the file to fall back to the built-in defaults entirely.
+Only keys that exist in the built-in defaults are accepted. An unknown key stops startup with an error naming the file and key. Delete the file to fall back to the built-in defaults entirely.
 
 This file has no effect on the VS Code extension — VS Code uses its own workspace settings (see [settings.md](settings.md)).
